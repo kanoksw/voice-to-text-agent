@@ -6,3 +6,20 @@ __pycache__/
 *.log
 .env
 .DS_Store
+
+# test / scratch scripts (keep local)
+*_test.py
+test_*.py
+stt_test.py
+pipeline_test.py
+step4_test.py
+agent_loop_test.py
+llm_extract_test.py
+
+# optional: temp runner / scratch
+tempCodeRunnerFile.py
+
+# test audios
+test_audio/
+*.wav
+*.m4a

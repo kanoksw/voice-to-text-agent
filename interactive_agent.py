@@ -17,8 +17,6 @@ def run_interactive_agent(first_audio_path: str) -> dict:
 
     # ---------- Round 1 ----------
     transcript = speech_to_text(first_audio_path)
-    print("\n=== TRANSCRIPT ROUND 1 ===")
-    print(transcript)
     data = extract_fields(transcript, expected_fields=[])
     
     # ✅ normalize หลัง extract
@@ -36,7 +34,6 @@ def run_interactive_agent(first_audio_path: str) -> dict:
 
     # ---------- Multi-turn ----------
     while status != "complete":
-        # แสดงผลรอบนี้ให้ผู้ใช้เห็น
         print("\n=== CURRENT RESULT ===")
         print(json.dumps(
             {
@@ -95,3 +92,4 @@ if __name__ == "__main__":
         result = run_interactive_agent(first)
         print("\n=== FINAL RESULT ===")
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        

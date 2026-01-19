@@ -9,13 +9,15 @@ from plate_normalizer import normalize_license_plate
 # =====================
 # STT
 # =====================
+
+model = WhisperModel("large", device="cpu", compute_type="int8")
+
 def speech_to_text(audio_path: str) -> str:
-    model = WhisperModel("small", device="cpu", compute_type="int8")
+    
 
     segments, _ = model.transcribe(
         audio_path,
         beam_size=10,
-        language="th",
         vad_filter=True
     )
 
@@ -40,13 +42,25 @@ def extract_fields(transcript: str, expected_fields: list[str] | None = None) ->
     expected_fields = expected_fields or []
 
     base_rules = (
-        "Return ONLY valid JSON with keys:\n"
+        "Return ONLY valid JSON with exactly these keys:\n"
         "first_name, last_name, gender, phone, license_plate.\n"
         "- Always return all keys.\n"
-        "- Use null for missing.\n"
-        "- Do not hallucinate.\n"
-        "- phone: digits only.\n"
-        "- gender: male/female/other/null; ชาย/ผู้ชาย=male, หญิง/ผู้หญิง=female.\n"
+        "- Use null if a field is missing or unclear.\n"
+        "- Do NOT hallucinate.\n\n"
+
+        "The input text may be in Thai or English, or mixed.\n\n"
+
+        "Gender rules:\n"
+        "- male: ชาย, ผู้ชาย, man, male\n"
+        "- female: หญิง, ผู้หญิง, woman, female\n"
+        "- Otherwise: null\n\n"
+
+        "Phone rules:\n"
+        "- Digits only (no spaces, no hyphens).\n"
+        "- Thai or English speech may be used "
+        "(e.g., 'ศูนย์หกหนึ่งแปดห้า หนึ่งศูนย์หกหนึ่งแปด', "
+        "'zero six one eight five one zero six one eight').\n"
+        "- If unclear, set null.\n\n"
     )
 
     # โหมดรอบถามกลับ: จำกัดให้เติมเฉพาะ field ที่ถาม
@@ -65,12 +79,17 @@ def extract_fields(transcript: str, expected_fields: list[str] | None = None) ->
 
     license_rules = (
         "License plate rules:\n"
-        "- Convert Thai spelled letters to Thai characters.\n"
-        "- Example: 'กอไก่ ขอไข่ 1234' -> 'กข1234'\n"
+        "- Thai spelled letters must be converted to Thai characters.\n"
+        "  Example: 'กอไก่ ขอไข่ 1 2 3 4' -> 'กข1234'\n"
+        "- English license plates are allowed.\n"
+        "  Example: 'AB 1 2 3 4' -> 'AB1234'\n"
+        "- Keep license_plate as a compact string (no spaces).\n"
+        "- If unclear, set null.\n\n"
     )
 
     system_prompt = (
         "You extract structured fields from Thai speech transcripts.\n"
+        "You extract structured fields from speech transcripts.\n\n"
         + base_rules
         + focus_rules
         + license_rules
@@ -84,7 +103,7 @@ def extract_fields(transcript: str, expected_fields: list[str] | None = None) ->
             {"role": "user", "content": f"Transcript:\n{transcript}"},
         ],
         "stream": False,
-        "options": {  # ✅ ทำให้ผลนิ่งขึ้น
+        "options": {  
             "temperature": 0,
             "top_p": 1
         }
@@ -99,7 +118,6 @@ def extract_fields(transcript: str, expected_fields: list[str] | None = None) ->
 
     raw = json.loads(content)
 
-    # ✅ NORMALIZE OUTPUT (หัวใจของ bug นี้)
     normalized = {
         "first_name": raw.get("first_name"),
         "last_name": raw.get("last_name"),
@@ -112,7 +130,7 @@ def extract_fields(transcript: str, expected_fields: list[str] | None = None) ->
 
 
 # =====================
-# FULL PIPELINE (Step 4.6)
+# FULL PIPELINE 
 # =====================
 def run_pipeline(audio_path: str) -> dict:
     # Step 1: STT
@@ -127,7 +145,7 @@ def run_pipeline(audio_path: str) -> dict:
     # Step 3: Validation
     status, missing = validate_data(data)
 
-    # Step 4: Final output (ask all missing at once)
+    # Step 4: Final output 
     if status == "complete":
         data_en = romanize_person(data)
         return {
@@ -143,6 +161,6 @@ def run_pipeline(audio_path: str) -> dict:
 
 
 if __name__ == "__main__":
-    result = run_pipeline("testcase1.wav")
+    result = run_pipeline("testcase_eng_2.wav")
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

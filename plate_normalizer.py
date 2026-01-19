@@ -4,7 +4,6 @@ import re
 THAI_SPELL_MAP = {
     "กอไก่": "ก",
     "ขอไข่": "ข",
-    "ขอควาย": "ข",
     "คอควาย": "ค",
     "งองู": "ง",
     "จอจาน": "จ",
@@ -31,38 +30,58 @@ THAI_SPELL_MAP = {
     "สอเสือ": "ส",
     "หอหีบ": "ห",
     "ฮอนกฮูก": "ฮ",
-    # คำเรียกแบบย่อ/หลุด ๆ ที่ STT ชอบทำ
-    "หอควาย": "ฃ",  # ถ้า STT ชอบได้ยินมั่ว ให้ map ไว้ (ปรับตามจริง)
+    "ขอควาย": "ค",
+    "ซอช้าง": "ช",
+    "พอผึ้ง": "ผ",
 }
 
-# คำฟิลเลอร์ที่มักติดมา
-FILLERS = ["ทะเบียน", "ป้ายทะเบียน", "รถ", "จังหวัด", "กรุงเทพ", "กทม", "จ.", "ครับ", "ค่ะ"]
+FILLERS = ["ทะเบียน", "ป้ายทะเบียน", "ทะเบียนรถ", "รถ", "จังหวัด", "กรุงเทพ", "กทม", "ครับ", "ค่ะ"]
 
 def normalize_license_plate(text: str | None) -> str | None:
     if not text:
         return None
 
     s = text.strip()
-
-    # ลบคำฟิลเลอร์
+    
+    # 1) ลบคำฟิลเลอร์แบบ "ไม่ทำลายรูปประโยค"
+    #    (แทนที่จะลบ space ทั้งหมดก่อน)
+    s_up = s.upper()
     for w in FILLERS:
-        s = s.replace(w, " ")
+        s_up = s_up.replace(w.upper(), " ")
 
-    # ให้เป็น lower เพื่อความสม่ำเสมอ (ถ้ามีอังกฤษปน)
-    s = s.lower()
+    # 2) EN plate: รองรับ AB1234 / AB 1234 / AB-1234 / AB1234.
+    #    ใช้ boundary กันตัวอักษรแปลก ๆ ติดหน้า-ท้าย
+    m_en = re.search(
+        r"(?<![A-Z0-9])([A-Z]{1,3})[\s\-\.]*([0-9]{1,4})(?![A-Z0-9])",
+        s_up
+    )
+    if m_en:
+        return f"{m_en.group(1)}{m_en.group(2)}"
 
-    # แปลงคำอ่านเป็นตัวอักษรไทย
-    # ทำแบบ greedy: จับ phrase ยาวก่อน
+    # 3) TH plate: กข1234 / ก.ไก่ ข.ไข่ 1 2 3 4 (ผ่าน map)
+    s_th = s.strip()
+
+    # ลบฟิลเลอร์อีกรอบฝั่งไทย
+    for w in FILLERS:
+        s_th = s_th.replace(w, " ")
+
+    # normalize separators
+    s_th = s_th.replace("-", " ").replace(".", " ")
+    s_th = re.sub(r"\s+", " ", s_th).strip().lower()
+
+    # แปลงคำอ่านเป็นตัวอักษรไทย (greedy)
     for k in sorted(THAI_SPELL_MAP.keys(), key=len, reverse=True):
-        s = s.replace(k, THAI_SPELL_MAP[k])
+        s_th = s_th.replace(k, THAI_SPELL_MAP[k])
 
-    # ลบทุกอย่างที่ไม่ใช่ ไทย/ตัวเลข
-    s = re.sub(r"[^0-9ก-๙]", "", s)
+    # ดึงเฉพาะ ไทย+เลข แล้วเอามาต่อกัน
+    s_th = re.sub(r"[^0-9ก-๙]", "", s_th)
+    
+    # ✅ NEW: บีบให้ติดกันไปเลย (กันกรณีมีช่องว่างหลงเหลือ)
+    s_th = s_th.replace(" ", "")
 
-    # รูปแบบที่เรายอมรับ: อักษรไทย 1-3 ตัว + เลข 1-4 หลัก (ปรับได้)
-    m = re.fullmatch(r"([ก-๙]{1,3})(\d{1,4})", s)
-    if not m:
+    m_th = re.fullmatch(r"([ก-ฮ]{1,3})(\d{1,4})", s_th)
+    if not m_th:
         return None
 
-    letters, digits = m.group(1), m.group(2)
-    return f"{letters}{digits}"
+    return f"{m_th.group(1)}{m_th.group(2)}"
+

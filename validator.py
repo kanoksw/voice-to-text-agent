@@ -22,7 +22,24 @@ def validate_name(name: str | None) -> bool:
 def validate_license_plate(p: str | None) -> bool:
     if p is None:
         return False
-    return bool(re.fullmatch(r"[ก-๙]{1,3}\d{1,4}", p))
+
+    p = p.strip()
+
+    # EN: AB1234 / ABC1234
+    if re.fullmatch(r"[A-Za-z]{1,3}\d{1,4}", p):
+        return True
+
+    # TH: กข1234
+    if re.fullmatch(r"[ก-๙]{1,3}\d{1,4}", p):
+        return True
+
+    return False
+
+def validate_gender(g: str | None) -> bool:
+    if g is None:
+        return False
+    g = g.strip().lower()
+    return g in ["male", "female"]
 
 def validate_data(data: Dict) -> Tuple[str, List[str]]:
     missing_or_invalid = []
@@ -35,6 +52,9 @@ def validate_data(data: Dict) -> Tuple[str, List[str]]:
 
     if not validate_phone(data.get("phone")):
         missing_or_invalid.append("phone")
+        
+    if not validate_gender(data.get("gender")):
+        missing_or_invalid.append("gender")
 
     if not validate_license_plate(data.get("license_plate")):
         missing_or_invalid.append("license_plate")
@@ -46,6 +66,7 @@ FIELD_THAI = {
     "first_name": "ชื่อ",
     "last_name": "นามสกุล",
     "phone": "เบอร์โทรศัพท์",
+    "gender": "เพศ",
     "license_plate": "ทะเบียนรถ"
 }
 

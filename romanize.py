@@ -31,13 +31,11 @@ def romanize_thai_name(th_name: str) -> str:
     r.raise_for_status()
 
     out = r.json()["message"]["content"].strip()
-    # safety: remove code fences if any
     out = re.sub(r"^```.*?\n", "", out)
     out = re.sub(r"\n```$", "", out)
     out = out.strip()
-    out = out.replace(" ", "")  # ลบ space ให้เป็นคำเดียว เช่น Jai Dei -> Jaidee
+    out = out.replace(" ", "") 
     
-    # ถ้า LLM ส่งของแปลก/ว่าง → fallback
     if not out or any(ch in out for ch in "{}[]:"):
         return th_name
 
