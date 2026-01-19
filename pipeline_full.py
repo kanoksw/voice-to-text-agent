@@ -10,7 +10,7 @@ from plate_normalizer import normalize_license_plate
 # STT
 # =====================
 def speech_to_text(audio_path: str) -> str:
-    model = WhisperModel("large", device="cpu", compute_type="int8")
+    model = WhisperModel("small", device="cpu", compute_type="int8")
 
     segments, _ = model.transcribe(
         audio_path,

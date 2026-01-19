@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+faster-whisper
+ctranslate2
+numpy
+pydantic
+requests
+soundfile
