@@ -221,4 +221,73 @@ License Plate (ทะเบียนรถ)
 ├── romanize.py  
 ├── api_server.py  
 └── README.md  
+-----
 
+### การใช้งาน 
+
+### 1) โหมด Single-pass: pipeline_full.py  
+
+เหมาะสำหรับการรันครั้งเดียวจบ  
+
+รูปแบบคำสั่ง: ``` python pipeline_full.py <path_to_audio.wav> ```
+ตัวอย่าง: ```python pipeline_full.py test_audio/testcase_thai_1.wav```
+
+ผลลัพธ์ที่คาดหวัง:  
+- ถ้าข้อมูลครบ → ได้ status: complete และ data ครบ  
+- ถ้าข้อมูลไม่ครบ/ไม่ผ่าน validation → ได้ status: incomplete พร้อม missing_fields และ message  
+
+ตัวอย่าง output (complete):
+```
+{
+  "status": "complete",
+  "data": {
+    "first_name": "Somchai",
+    "last_name": "Jai Dee",
+    "gender": "male",
+    "phone": "0812345678",
+    "license_plate": "กข1234"
+  }
+}
+```
+
+ตัวอย่าง output (incomplete):
+```
+{
+  "status": "incomplete",
+  "missing_fields": ["license_plate"],
+  "message": "ขอรบกวนยืนยันทะเบียนรถอีกครั้ง เนื่องจากระบบอาจได้ยินไม่ชัด"
+}
+```
+
+### 2) โหมด Interactive (Multi-turn): interactive_agent.py  
+
+เหมาะสำหรับการใช้งานแบบถามกลับอัตโนมัติเมื่อข้อมูลยังไม่ครบ  
+
+รูปแบบคำสั่ง: ``` python interactive_agent.py <path_to_audio.wav> ```  
+ตัวอย่าง: ```python interactive_agent.py test_audio/testcase_thai_1.wav```
+
+
+วิธีใช้งาน  
+1. รันโปรแกรม  
+2. ใส่ path ไฟล์เสียงรอบแรก เช่น test_audio/testcase_thai_2.1.wav  
+3. ถ้าระบบแจ้งว่ายังขาด → อัดเสียงเพิ่มเฉพาะข้อมูลที่ขาด แล้วใส่ path รอบถัดไป  
+4. ทำซ้ำจนได้ status: complete  
+
+ตัวอย่างการใช้งาน  
+```
+- ใส่ path ไฟล์เสียงรอบแรก (เช่น input.wav): test_audio/testcase_thai_2.1.wav
+... CURRENT RESULT ...
+status: incomplete
+missing_fields: ["license_plate"]
+
+พิมพ์ path ไฟล์เสียงรอบถัดไป (หรือพิมพ์ q เพื่อออก): test_audio/testcase_thai_2.2.wav
+... FINAL RESULT ...
+status: complete
+```
+
+### เงื่อนไขไฟล์เสียง  
+รองรับ เฉพาะไฟล์ .wav  
+ตัวอย่างการแปลง (ถ้ามี ffmpeg):  
+```
+ffmpeg -i input.m4a -ar 16000 -ac 1 input.wav
+```
