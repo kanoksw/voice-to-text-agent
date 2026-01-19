@@ -70,11 +70,11 @@ def process_audio(audio: UploadFile = File(...)):
                 {
                     "status": "complete",
                     "data": data,
-                    "transcript": transcript,  # จะเอาออกก็ได้ แต่ใส่ไว้ debug/เดโม
+                    "transcript": transcript, 
                 }
             )
 
-        # ไม่ครบ -> เปิด session
+        # ถ้าไม่ครบจะเปิด session
         session_id = str(uuid.uuid4())
         sessions[session_id] = {
             "data": data,
@@ -124,7 +124,7 @@ def submit_audio(
 
         transcript = speech_to_text(temp_path)
 
-        # สำคัญ: จำกัดให้ extract เฉพาะ field ที่ถาม (ช่วยลดหลุด)
+        # จำกัดให้ extract เฉพาะ field ที่ถาม (ช่วยลดหลุด)
         new_data = extract_fields(transcript, expected_fields=missing)
 
         new_data = _normalize_fields(new_data)
@@ -150,7 +150,7 @@ def submit_audio(
                 }
             )
 
-        # ยังไม่ครบ -> update session แล้วถามต่อ
+        # ถ้ายังไม่ครบจะ update session แล้วถามต่อ
         sessions[session_id] = {
             "data": merged,
             "missing_fields": missing2,
