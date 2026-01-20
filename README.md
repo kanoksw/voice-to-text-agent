@@ -221,14 +221,16 @@ LLM ถูกเลือกใช้แทน rule-based mapping เพรา�
 - ตัดสินใจ fallback กลับชื่อภาษาไทยเมื่อความมั่นใจไม่เพียงพอ
 
 ---
-## โครงสร้าง Repository
+## โครงสร้าง Repository 9 ไฟล์
 ├── pipeline_full.py  
 ├── interactive_agent.py  
 ├── validator.py  
 ├── plate_normalizer.py  
-├── romanize.py  
+├── romanize.py
+├── agent_utils.py  
 ├── api_server.py  
-└── README.md  
+├── README.md  
+└── requirement.txt
 -----
 
 ### การใช้งาน 
